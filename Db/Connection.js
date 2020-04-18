@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
-
-const URI ="mongodb+srv://ledmago:Ledmago11@ledmago-jyscr.azure.mongodb.net/General?retryWrites=true&w=majority";
+const config = require('../config.json');
 
 const connectDB = async () => {
-  await mongoose.connect(URI, {
+  await mongoose.connect(config.DBuri, {
     useUnifiedTopology: true,
     useNewUrlParser: true
   });

@@ -1,4 +1,4 @@
 {
-    "connectionString": "mongodb://localhost/node-mongo-registration-login-api",
+    "DBuri": "mongodb+srv://ledmago:Ledmago11@ledmago-jyscr.azure.mongodb.net/General?retryWrites=true&w=majority",
     "secret": "secretKey00009"
 }

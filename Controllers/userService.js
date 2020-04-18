@@ -56,11 +56,12 @@ async function getById(id) {
 }
 
 async function create(userParam, req, res) {
+  try{
   // Cookie Control
   if (!req.cookies.userHash) {
     // validate
     if (await User.findOne({ username: userParam.username })) {
-      return { status: 'fail', text: 'Username ' + userParam.username + ' is already taken' };
+      res.status(403).send({ status: 'fail', text: 'Username ' + userParam.username + ' is already taken' });
       //  throw 'Username "' + userParam.username + '" is already taken';
     }
 
@@ -75,14 +76,19 @@ async function create(userParam, req, res) {
     await user.save();
     var userHashToken = jwt.sign({ username: userParam.username }, config.secret);
     res.cookie('userHash', userHashToken)
-    return { status: 'ok', username: userParam.username, firstName: userParam.firstName, lastName: userParam.lastName };
-
+    res.status(200).send(user)
+    
   }
   else {
-    res.send('You are logged in').status(404)
+    res.status(403).send({status:'fail',message:'You are already logged in'})
   }
 
-
+}
+catch(e)
+{
+  e.status = 'fail';
+  res.status(403).send(e)
+}
 
 }
 
