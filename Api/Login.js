@@ -7,7 +7,7 @@ const {authenticate,create} = require('../Controllers/userService');
 route.get('/', async (req, res) => {
   const Username = req.body.username;
   const Password = req.body.password;
-res.send(await authenticate({ username: Username,password:Password,firstName:'FIRAT',lastName:'Dogan'},req,res));
+await authenticate({ username: Username,password:Password,firstName:'FIRAT',lastName:'Dogan'},req,res);
 
 });
 

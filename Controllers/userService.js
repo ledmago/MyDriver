@@ -13,10 +13,36 @@ module.exports = {
 };
 
 
-findUserByCookie = async (userHash) => {
-  if (userHash) {
-    var result = jwt.verify(userHash, config.secret);
-    return await User.findOne({ username: result.username });
+findUserByCookie = async (userHash, res, username, password) => {
+  try {
+    if (userHash) {
+      var result = jwt.verify(userHash, config.secret);
+
+      const user = await User.findOne({ username: result.username })
+      if (user) {
+        userWithoutHash = user;
+        // user.hash = ''
+        res.send(userWithoutHash);
+      }
+      else {
+        res.clearCookie('userHash');
+        if (username == null || password == null) {
+          res.status(403).send({ status: 'fail', message: 'username or password is incorrect' });
+        }
+        else {
+          // Eğer bir hata varsa cookie'sini sil
+          this.authenticate(username, password)
+        }
+
+
+      }
+
+
+
+    }
+  }
+  catch (e) {
+    res.send({ status: 'fail', message: 'Your account is not found ', error: e });
   }
 }
 
@@ -31,19 +57,16 @@ async function authenticate({ username, password } = null, req, res) {
         const { hash, ...userWithoutHash } = user.toObject();
         const userHashToken = jwt.sign({ username: username }, config.secret);
         res.cookie('userHash', userHashToken)
-        return {
-          ...userWithoutHash,
-          userHashToken
-        };
+        res.send(userWithoutHash).status(202);
       }
-      else{res.send('username or password is wrong')}
+      else { res.status(403).send({ status: 'fail', message: 'username or password is wrong' }) }
 
 
     }
-    else { res.send('username or password is wrong') }
+    else { res.status(403).send({ status: 'fail', message: 'username or password is wrong' }) }
   }
   else {
-    res.send(await findUserByCookie(req.cookies.userHash));
+    res.send(await findUserByCookie(req.cookies.userHash, res, username, password));
   }
 }
 
@@ -56,39 +79,38 @@ async function getById(id) {
 }
 
 async function create(userParam, req, res) {
-  try{
-  // Cookie Control
-  if (!req.cookies.userHash) {
-    // validate
-    if (await User.findOne({ username: userParam.username })) {
-      res.status(403).send({ status: 'fail', text: 'Username ' + userParam.username + ' is already taken' });
-      //  throw 'Username "' + userParam.username + '" is already taken';
+  try {
+    // Cookie Control
+    if (!req.cookies.userHash) {
+      // validate
+      if (await User.findOne({ username: userParam.username })) {
+        res.status(403).send({ status: 'fail', text: 'Username ' + userParam.username + ' is already taken' });
+        //  throw 'Username "' + userParam.username + '" is already taken';
+      }
+
+      const user = new User(userParam);
+
+      // hash password
+      if (userParam.password) {
+        user.hash = bcrypt.hashSync(userParam.password, 10);
+      }
+
+      // save user
+      await user.save();
+      var userHashToken = jwt.sign({ username: userParam.username }, config.secret);
+      res.cookie('userHash', userHashToken)
+      res.status(200).send(user)
+
+    }
+    else {
+      res.status(403).send({ status: 'fail', message: 'You are already logged in' })
     }
 
-    const user = new User(userParam);
-
-    // hash password
-    if (userParam.password) {
-      user.hash = bcrypt.hashSync(userParam.password, 10);
-    }
-
-    // save user
-    await user.save();
-    var userHashToken = jwt.sign({ username: userParam.username }, config.secret);
-    res.cookie('userHash', userHashToken)
-    res.status(200).send(user)
-    
   }
-  else {
-    res.status(403).send({status:'fail',message:'You are already logged in'})
+  catch (e) {
+    e.status = 'fail';
+    res.status(403).send(e)
   }
-
-}
-catch(e)
-{
-  e.status = 'fail';
-  res.status(403).send(e)
-}
 
 }
 
