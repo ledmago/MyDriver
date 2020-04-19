@@ -12,9 +12,38 @@ module.exports = {
   registerUser,
   registerDriver,
   update,
-  delete: _delete
+  delete: _delete,
+  increaseBalance,
+  changePassword,
+  changeEmail,
+  updateLocation
 };
 
+
+var CheckLogin = async (userHash) => {
+  try {
+    if (userHash) {
+      var result = jwt.verify(userHash, config.secret);
+
+      const user = result.userType == 'user' ? await User.findOne({ username: result.username }) : await Driver.findOne({ username: result.username })
+      if (user) {
+        userWithoutHash = user;
+        // user.hash = ''
+        return userWithoutHash;
+      }
+      else {
+        return false;
+      }
+    }
+    else {
+      return false;
+    }
+  }
+  catch (e) {
+    return false;
+  }
+
+}
 
 var createHash = (username, res, userType) => {
   var userHashToken = jwt.sign({ username: username, userType: userType }, config.secret);
@@ -361,4 +390,115 @@ async function update(id, userParam) {
 
 async function _delete(id) {
   await User.findByIdAndRemove(id);
+}
+
+
+
+// --- User Updates Functions -- //
+
+async function increaseBalance(token, req, res) {
+
+
+  var generalUser = await CheckLogin(req.cookies.userHash);
+  var username = generalUser.username;
+  var userType = generalUser.userType;
+  if (username && token != null) {
+    try {
+      var tokenResult = jwt.verify(token, config.secret);
+      var amount = tokenResult.amount;
+      var tokenUsername = tokenResult.username;
+
+      if (tokenUsername == username) {
+        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+        var newBalance = currentUser.balance + amount;
+        currentUser.balance = newBalance;
+        currentUser.save();
+        res.status(202).json({ status: 'ok', balance: currentUser.balance });
+
+      }
+      else {
+        res.json({ status: 'fail', message: 'token parametresindeki username eşleşmedi' })
+      }
+
+
+    }
+    catch (e) { res.send({ status: 'fail', message: 'token parametresi yanlış', e: e }) }
+  }
+  else {
+    res.send({ status: 'fail', message: 'token parametresi eksik' })
+  }
+
+}
+
+async function changePassword(newPassword, oldPassword, req, res) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+    var oldCurrentPassword = generalUser.hash;
+    if (username && bcrypt.compareSync(oldPassword, oldCurrentPassword)) {
+      try {
+
+        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+        currentUser.hash = bcrypt.hashSync(newPassword, 10);
+        currentUser.save();
+        res.status(202).json({ status: 'ok', message: 'Şifre değiştirildi' });
+
+      }
+      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+    }
+    else {
+      res.send({ status: 'fail', message: 'Eski şifre yanlış' })
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+}
+
+async function changeEmail(newEmail, req, res) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+    if (username && ValidateEmail(newEmail) && await isThereEmailAlready(newEmail)) {
+      try {
+
+        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+        currentUser.email = newEmail;
+        currentUser.save();
+        res.status(202).json({ status: 'ok', message: 'Email değiştirildi' });
+
+      }
+      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+    }
+    else {
+      res.send({ status: 'fail', message: 'Email Geçersiz veya bir hesap tarafından zaten kullanılıyor.' })
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+}
+
+async function updateLocation(latitude, longitude, req, res) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+    if (username && latitude != null && longitude != null) {
+      try {
+
+        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+        currentUser.currentPosition = {latitude:latitude,longitude:longitude};
+        currentUser.save();
+        res.status(202).json({ status: 'ok', message: 'Konum Güncellendi' });
+
+      }
+      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+    }
+    else {
+      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
 }

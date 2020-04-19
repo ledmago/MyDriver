@@ -1,3 +1,5 @@
+Register
+
 {
    "username": "ledmago2",
     "password": "Ledmago11",
@@ -22,4 +24,25 @@
     "phone": "5313061214",
     "userType":"user",
 }
-anket12300@outlook.com:anket123456789
+
+
+İncrease Balance  /Api/UserProfile/increaseBalance
+Post
+{ "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbW91bnQiOjUwLCJ1c2VybmFtZSI6ImxlZG1hZ28yIn0.vSi0eNfxCWtEWVHwgtDfc_HL4cN8nLG0mV288KUY4po"  }
+        debugged = {
+            "amount":50,
+            "username":"ledmago2"
+        }
+}
+
+
+Change Password /Api/UserProfile/changePassword
+{
+   "newPassword":"Ledmago12",
+   "password":"Ledmago11"
+}
+
+Change Email /Api/UserProfile/ChangeEmail
+{
+	"email":"firatasd@asds.com"
+}
