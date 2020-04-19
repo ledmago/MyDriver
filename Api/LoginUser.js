@@ -1,12 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const route = express.Router();
-const {authenticate,create} = require('../Controllers/userService');
+const {authenticateUser} = require('../Controllers/userService');
 
 route.get('/', async (req, res) => {
   const Username = req.body.username;
   const Password = req.body.password;
-await authenticate({ username: Username,password:Password,firstName:'FIRAT',lastName:'Dogan'},req,res);
+await authenticateUser({ username: Username,password:Password,firstName:'FIRAT',lastName:'Dogan'},req,res);
 
 });
 

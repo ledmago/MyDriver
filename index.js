@@ -19,9 +19,16 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 
 app.get('/',(req,res)=>{res.send('okey')})
-app.use('/api/Login', require('./Api/Login'));
+app.use('/api/LoginUser', require('./Api/LoginUser'));
+app.use('/api/LoginDriver', require('./Api/LoginDriver'));
 app.use('/api/RegisterUser', require('./Api/RegisterUser'));
+app.use('/api/RegisterDriver', require('./Api/RegisterDriver'));
 app.use('/api/Logout', require('./Api/Logout'));
+
+
+
+app.use('/api/UserProfile', require('./Api/UserProfile'));
+
 app.use('/api/userModel', require('./Api/User'));
 // global error handler
 app.use(errorHandler);

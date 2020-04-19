@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const userSchema = new Schema({
+const driverSchema = new Schema({
   username: { type: String, unique: true, required: true },
   hash: { type: String, required: true },
   firstName: { type: String, required: true },
@@ -10,13 +10,15 @@ const userSchema = new Schema({
   phone : {type:String,required:true},
   currentPosition:{type:Object,required:false},
   balance:{type:Number,default:0,required:false},
-  creditCards:{type:Object,required:false},
-  createdDate: { type: Date, default: Date.now },
+  vehicle:{type:Object,required:true},
+  driverLicense:{type:Boolean,default:true,required:true},
+  iban:{type:String,required:false,default:null},
   profilePicture:{type:String,required:false,default:null},
-  userType:{type:String,default:'user',required:true}
+  createdDate: { type: Date, default: Date.now },
+  userType:{type:String,default:'driver',required:true}
 });
 
-userSchema.set('toJSON', { virtuals: true });
+driverSchema.set('toJSON', { virtuals: true });
 
 
-module.exports = User = mongoose.model('users', userSchema);
+module.exports = Driver = mongoose.model('drivers', driverSchema);

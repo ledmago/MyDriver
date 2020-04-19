@@ -1,0 +1,25 @@
+{
+   "username": "ledmago2",
+    "password": "Ledmago11",
+    "firstName": "Fırat",
+    "lastName": "Doğan",
+    "email": "firatdogsd@gmail.com",
+    "gender": "male",
+    "phone": "5313061214",
+    "userType":"driver",
+    "vehicleTemp":{"marka":"hyundai","model":"i20","yil":2011,"plaka":"06EZ2016"},
+    "driverLicense":true
+}
+
+
+{
+   "username": "ledmago2",
+    "password": "Ledmago11",
+    "firstName": "Fırat",
+    "lastName": "Doğan",
+    "email": "firatdogsd@gmail.com",
+    "gender": "male",
+    "phone": "5313061214",
+    "userType":"user",
+}
+anket12300@outlook.com:anket123456789
