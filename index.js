@@ -20,7 +20,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.get('/',(req,res)=>{res.send('okey')})
 app.use('/api/Login', require('./Api/Login'));
-app.use('/api/Register', require('./Api/Register'));
+app.use('/api/RegisterUser', require('./Api/RegisterUser'));
 app.use('/api/Logout', require('./Api/Logout'));
 app.use('/api/userModel', require('./Api/User'));
 // global error handler

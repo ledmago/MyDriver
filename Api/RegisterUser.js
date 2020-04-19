@@ -1,8 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const User = require('../Db/UserLoginSchema');
+const User = require('../Db/UserSchema');
 const route = express.Router();
-const {authenticate,create} = require('../Controllers/userService');
+const {registerUser} = require('../Controllers/userService');
 
 route.post('/', async (req, res) => {
   const Username = req.body.username;
@@ -13,7 +13,8 @@ route.post('/', async (req, res) => {
   const Phone = req.body.phone;
   const Gender = req.body.gender;
   
-await create({ username: Username,password:Password,firstName:FirstName,lastName:LastName,email:Email,phone:Phone,gender:Gender},req,res);
+  await registerUser(req.body,req,res);
+// await registerUser({ username: Username,password:Password,firstName:FirstName,lastName:LastName,email:Email,phone:Phone,gender:Gender},req,res);
 
 });
 

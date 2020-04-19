@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const User = require('../Db/UserLoginSchema');
 const route = express.Router();
 const {authenticate,create} = require('../Controllers/userService');
 
