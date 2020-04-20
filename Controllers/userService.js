@@ -16,7 +16,8 @@ module.exports = {
   increaseBalance,
   changePassword,
   changeEmail,
-  updateLocation
+  updateLocation,
+  addCard,
 };
 
 
@@ -489,9 +490,63 @@ async function updateLocation(latitude, longitude, req, res) {
       try {
 
         const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
-        currentUser.currentPosition = {latitude:latitude,longitude:longitude};
+        currentUser.currentPosition = { latitude: latitude, longitude: longitude };
         currentUser.save();
         res.status(202).json({ status: 'ok', message: 'Konum Güncellendi' });
+
+      }
+      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+    }
+    else {
+      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+}
+async function addCard(cardNumber, expireDate, cc, placeHolder, req, res) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+    if (username && cardNumber != null && expireDate != null && cc != null && placeHolder != null && userType == 'user') {
+      try {
+
+        const currentUser = await User.findOne({ username: username });
+        var currentCard = currentUser.creditCards;
+        var creditCardList = [];
+        var alreadyExist = false;
+        var itemIndex = null;
+        if (currentCard) {
+          currentCard.map((item) => { creditCardList.push(item) })
+        }
+        else{
+          currentUser.creditCards = [];
+        }
+        
+          // checks it if already credit card
+          currentUser.creditCards.map((item,index) => { if (item.cardNumber == cardNumber) {alreadyExist = true;itemIndex=index;} });
+        
+        if (alreadyExist == false) {
+          creditCardList.push({ cardNumber: cardNumber, expireDate: expireDate, cc: cc, placeHolder: placeHolder });
+          currentUser.creditCards = creditCardList;
+          currentUser.save();
+          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi',return:currentUser.creditCards });
+        }
+        else {
+
+          
+          creditCardList[itemIndex].cardNumber = cardNumber;
+          creditCardList[itemIndex].expireDate = expireDate;
+          creditCardList[itemIndex].cc = cc;
+          creditCardList[itemIndex].placeHolder = placeHolder;
+
+          currentUser.creditCards = creditCardList;
+          currentUser.save();
+          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi',return:currentUser.creditCards });
+        }
+
+
 
       }
       catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
