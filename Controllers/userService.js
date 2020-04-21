@@ -541,6 +541,7 @@ async function addCard(cardNumber, expireDate, cc, placeHolder, req, res) {
           creditCardList[itemIndex].cc = cc;
           creditCardList[itemIndex].placeHolder = placeHolder;
 
+          currentUser.creditCards = 'something'; // bu gerekli
           currentUser.creditCards = creditCardList;
           currentUser.save();
           res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi',return:currentUser.creditCards });
