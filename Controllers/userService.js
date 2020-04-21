@@ -18,6 +18,7 @@ module.exports = {
   changeEmail,
   updateLocation,
   addCard,
+  addIban,
 };
 
 
@@ -545,6 +546,63 @@ async function addCard(cardNumber, expireDate, cc, placeHolder, req, res) {
           currentUser.creditCards = creditCardList;
           currentUser.save();
           res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi',return:currentUser.creditCards });
+        }
+
+
+
+      }
+      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+    }
+    else {
+      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+}
+
+async function addIban(iban, placeHolder, bank, req, res) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+    if (username && iban != null && bank != null && placeHolder != null && userType == 'driver') {
+      try {
+
+        const currentUser = await Driver.findOne({ username: username });
+        var currentIban = currentUser.iban; 
+        var ibanList = [];
+        var alreadyExist = false;
+        var itemIndex = null;
+        if (currentIban) {
+
+          currentIban.map((item) => { ibanList.push(item) })
+        }
+        else{
+         
+          currentUser.iban = [];
+        }
+        
+          // checks it if already credit card
+          currentUser.iban.map((item,index) => { if (item.iban == iban) {alreadyExist = true;itemIndex=index;} });
+        
+        if (alreadyExist == false) {
+          ibanList.push({ iban: iban, bank: bank, placeHolder: placeHolder });
+          currentUser.iban = ibanList;
+          currentUser.save();
+          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi',return:currentUser.iban });
+        }
+        else {
+
+          
+          ibanList[itemIndex].iban = iban;
+          ibanList[itemIndex].bank = bank;
+          ibanList[itemIndex].placeHolder = placeHolder;
+
+          currentUser.iban = 'something'; // bu gerekli
+          currentUser.iban = ibanList;
+          currentUser.save();
+          res.status(202).json({ status: 'ok', message: 'iban Güncellendi',return:currentUser.iban });
         }
 
 

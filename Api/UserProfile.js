@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const route = express.Router();
-const { increaseBalance, changePassword,changeEmail,updateLocation,addCard } = require('../Controllers/userService');
+const { increaseBalance, changePassword,changeEmail,updateLocation,addCard,addIban } = require('../Controllers/userService');
 
 route.post('/increaseBalance', async (req, res) => {
     await increaseBalance(req.body.token, req, res);
@@ -22,6 +22,11 @@ route.post('/updateLocation', async (req, res) => {
 route.post('/addCard', async (req, res) => {
 
      await addCard(req.body.cardNumber,req.body.expireDate,req.body.cc,req.body.placeHolder, req, res);
+
+});
+route.post('/addIban', async (req, res) => {
+
+    await addIban(req.body.iban,req.body.placeHolder,req.body.bank, req, res);
 
 });
 module.exports = route;

@@ -12,7 +12,7 @@ const driverSchema = new Schema({
   balance:{type:Number,default:0,required:false},
   vehicle:{type:Object,required:true},
   driverLicense:{type:Boolean,default:true,required:true},
-  iban:{type:String,required:false,default:null},
+  iban:{type:Object,required:false},
   profilePicture:{type:String,required:false,default:null},
   createdDate: { type: Date, default: Date.now },
   userType:{type:String,default:'driver',required:true}
