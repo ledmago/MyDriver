@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../Db/UserSchema');
 const Driver = require('../Db/DriverSchema');
+const PaymentLog = require('../Db/PaymentLog');
 
 module.exports = {
   authenticateUser,
@@ -11,17 +12,31 @@ module.exports = {
   getById,
   registerUser,
   registerDriver,
-  update,
-  delete: _delete,
-  increaseBalance,
+  increase_decreaseBalance,
   changePassword,
   changeEmail,
   updateLocation,
   addCard,
   addIban,
+  addVehicle
 };
 
 
+
+
+
+
+/*
+
+  Login & Register Functions
+
+*/
+
+var createHash = (username, res, userType) => {
+  var userHashToken = jwt.sign({ username: username, userType: userType }, config.secret);
+  res.cookie('userHash', userHashToken);
+
+}
 var CheckLogin = async (userHash) => {
   try {
     if (userHash) {
@@ -46,14 +61,6 @@ var CheckLogin = async (userHash) => {
   }
 
 }
-
-var createHash = (username, res, userType) => {
-  var userHashToken = jwt.sign({ username: username, userType: userType }, config.secret);
-  res.cookie('userHash', userHashToken);
-
-}
-
-
 var findUserByCookie = async (userHash, res, username, password, userType) => {
   try {
     if (userHash) {
@@ -73,7 +80,7 @@ var findUserByCookie = async (userHash, res, username, password, userType) => {
         else {
           // Eğer bir hata varsa cookie'sini sil
 
-          this.authenticate(username, password)
+          if (userHash.userType == 'driver') this.authenticateDriver(username, password); else this.authenticateLogin(username, password);
         }
 
 
@@ -87,7 +94,6 @@ var findUserByCookie = async (userHash, res, username, password, userType) => {
     res.send({ status: 'fail', message: 'Your account is not found ', error: e });
   }
 }
-
 async function authenticateDriver({ username, password } = null, req, res) {
 
   if (!req.cookies.userHash) {
@@ -109,8 +115,6 @@ async function authenticateDriver({ username, password } = null, req, res) {
     res.send(await findUserByCookie(req.cookies.userHash, res, username, password));
   }
 }
-
-
 async function authenticateUser({ username, password } = null, req, res) {
 
   if (!req.cookies.userHash) {
@@ -132,19 +136,7 @@ async function authenticateUser({ username, password } = null, req, res) {
     res.send(await findUserByCookie(req.cookies.userHash, res, username, password));
   }
 }
-
-async function getAll() {
-  return await User.find().select('-hash');
-}
-
-async function getById(id) {
-  return await User.findById(id).select('-hash');
-}
-
-
-
-// Validating Functions for Registering User
-
+// Validating Functions
 
 function ValidateEmail(mail) {
   if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(mail)) {
@@ -162,7 +154,6 @@ var isThereEmailAlready = async (email, usertype) => {
 
   }
 }
-
 var ValidateUsername = async (username, usertype) => {
 
   var search = usertype == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
@@ -185,7 +176,7 @@ function validatePhone(phone) {
     return false;
   }
 }
-// Validate For User
+// Validate for registering main functions
 var validateRegisterParams = async (userParams) => {
 
   var isUsernameAlready = await ValidateUsername(userParams.username, userParams.userType) ? true : 'the username ' + userParams.username + ' is already taken.';
@@ -251,15 +242,7 @@ var validateRegisterParams = async (userParams) => {
 
 
 };
-
-
-//Validate For Driver
-
-
-
-
-// Register User Function
-
+// Register Functions
 async function registerUser(userParam, req, res) {
 
   try {
@@ -312,8 +295,6 @@ async function registerUser(userParam, req, res) {
   }
 
 }
-
-
 async function registerDriver(userParam, req, res) {
 
   try {
@@ -370,51 +351,47 @@ async function registerDriver(userParam, req, res) {
 }
 
 
-async function update(id, userParam) {
-  const user = await User.findById(id);
-
-  // validate
-  if (!user) throw 'User not found';
-  if (user.username !== userParam.username && await User.findOne({ username: userParam.username })) {
-    throw 'Username "' + userParam.username + '" is already taken';
-  }
-
-  // hash password if it was entered
-  if (userParam.password) {
-    userParam.hash = bcrypt.hashSync(userParam.password, 10);
-  }
-
-  // copy userParam properties to user
-  Object.assign(user, userParam);
-
-  await user.save();
-}
-
-async function _delete(id) {
-  await User.findByIdAndRemove(id);
-}
 
 
 
-// --- User Updates Functions -- //
 
-async function increaseBalance(token, req, res) {
+
+
+
+
+
+
+
+
+
+
+/*
+
+  User Functions
+
+
+*/
+
+async function increase_decreaseBalance(token, req, res) {
 
 
   var generalUser = await CheckLogin(req.cookies.userHash);
   var username = generalUser.username;
   var userType = generalUser.userType;
-  if (username && token != null) {
+  const tokenAlreadyExist = await PaymentLog.exists({token:token})
+  if (username && token != null && tokenAlreadyExist == false) {
     try {
       var tokenResult = jwt.verify(token, config.secret);
       var amount = tokenResult.amount;
       var tokenUsername = tokenResult.username;
+      var opearation = tokenResult.operation;
 
       if (tokenUsername == username) {
         const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
-        var newBalance = currentUser.balance + amount;
+        var newBalance = opearation == 'increase' ? currentUser.balance + amount:currentUser.balance - amount
         currentUser.balance = newBalance;
         currentUser.save();
+        addPaymentLog(req,opearation, amount,null,token,newBalance);
         res.status(202).json({ status: 'ok', balance: currentUser.balance });
 
       }
@@ -521,22 +498,22 @@ async function addCard(cardNumber, expireDate, cc, placeHolder, req, res) {
         if (currentCard) {
           currentCard.map((item) => { creditCardList.push(item) })
         }
-        else{
+        else {
           currentUser.creditCards = [];
         }
-        
-          // checks it if already credit card
-          currentUser.creditCards.map((item,index) => { if (item.cardNumber == cardNumber) {alreadyExist = true;itemIndex=index;} });
-        
+
+        // checks it if already credit card
+        currentUser.creditCards.map((item, index) => { if (item.cardNumber == cardNumber) { alreadyExist = true; itemIndex = index; } });
+
         if (alreadyExist == false) {
           creditCardList.push({ cardNumber: cardNumber, expireDate: expireDate, cc: cc, placeHolder: placeHolder });
           currentUser.creditCards = creditCardList;
           currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi',return:currentUser.creditCards });
+          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi', return: currentUser.creditCards });
         }
         else {
 
-          
+
           creditCardList[itemIndex].cardNumber = cardNumber;
           creditCardList[itemIndex].expireDate = expireDate;
           creditCardList[itemIndex].cc = cc;
@@ -545,7 +522,7 @@ async function addCard(cardNumber, expireDate, cc, placeHolder, req, res) {
           currentUser.creditCards = 'something'; // bu gerekli
           currentUser.creditCards = creditCardList;
           currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi',return:currentUser.creditCards });
+          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi', return: currentUser.creditCards });
         }
 
 
@@ -570,7 +547,7 @@ async function addIban(iban, placeHolder, bank, req, res) {
       try {
 
         const currentUser = await Driver.findOne({ username: username });
-        var currentIban = currentUser.iban; 
+        var currentIban = currentUser.iban;
         var ibanList = [];
         var alreadyExist = false;
         var itemIndex = null;
@@ -578,23 +555,23 @@ async function addIban(iban, placeHolder, bank, req, res) {
 
           currentIban.map((item) => { ibanList.push(item) })
         }
-        else{
-         
+        else {
+
           currentUser.iban = [];
         }
-        
-          // checks it if already credit card
-          currentUser.iban.map((item,index) => { if (item.iban == iban) {alreadyExist = true;itemIndex=index;} });
-        
+
+        // checks it if already credit card
+        currentUser.iban.map((item, index) => { if (item.iban == iban) { alreadyExist = true; itemIndex = index; } });
+
         if (alreadyExist == false) {
           ibanList.push({ iban: iban, bank: bank, placeHolder: placeHolder });
           currentUser.iban = ibanList;
           currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi',return:currentUser.iban });
+          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi', return: currentUser.iban });
         }
         else {
 
-          
+
           ibanList[itemIndex].iban = iban;
           ibanList[itemIndex].bank = bank;
           ibanList[itemIndex].placeHolder = placeHolder;
@@ -602,7 +579,7 @@ async function addIban(iban, placeHolder, bank, req, res) {
           currentUser.iban = 'something'; // bu gerekli
           currentUser.iban = ibanList;
           currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'iban Güncellendi',return:currentUser.iban });
+          res.status(202).json({ status: 'ok', message: 'iban Güncellendi', return: currentUser.iban });
         }
 
 
@@ -611,8 +588,117 @@ async function addIban(iban, placeHolder, bank, req, res) {
       catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
     }
     else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
+      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya bilgiler eksik' })
     }
   }
   catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+}
+async function addVehicle(plaka, marka, model, yil, renk, req, res) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+    if (username && marka != null && model != null && yil != null && renk != null && userType == 'driver') {
+      try {
+
+        const currentUser = await Driver.findOne({ username: username });
+        var currentVehicle = currentUser.vehicle;
+        var vehiclList = [];
+        var alreadyExist = false;
+        var itemIndex = null;
+        if (currentVehicle) {
+
+          currentVehicle.map((item) => { vehiclList.push(item) })
+        }
+        else {
+
+          currentUser.vehicle = [];
+        }
+
+        // checks it if already credit card
+        currentUser.vehicle.map((item, index) => { if (item.plaka == plaka) { alreadyExist = true; itemIndex = index; } });
+
+        if (alreadyExist == false) {
+          vehiclList.push({ plaka: plaka, renk: renk, model: model, marka: marka, yil: yil });
+          currentUser.vehicle = vehiclList;
+          currentUser.save();
+          res.status(202).json({ status: 'ok', message: 'Araç Eklendi', return: currentUser.vehicle });
+        }
+        else {
+
+
+          vehiclList[itemIndex].plaka = plaka;
+          vehiclList[itemIndex].marka = marka;
+          vehiclList[itemIndex].model = model;
+          vehiclList[itemIndex].yil = yil;
+          vehiclList[itemIndex].renk = renk;
+
+          currentUser.vehicle = 'something'; // bu gerekli
+          currentUser.vehicle = vehiclList;
+          currentUser.save();
+          res.status(202).json({ status: 'ok', message: 'iban Güncellendi', return: currentUser.vehicle });
+        }
+
+
+
+      }
+      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+    }
+    else {
+      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya birşeyler yanlış gitti' })
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+}
+async function addPaymentLog(req,operation, amount, reason = null,token,finishedBalance) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+   
+    if (username && operation != null && amount != null) {
+      try {
+
+        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+
+        var paymentLog = new PaymentLog({ username: currentUser.username, operation: operation, amount: amount, reason: reason,token:token,finishedBalance:finishedBalance });
+        paymentLog.save();
+        return true;
+
+
+
+      }
+      catch (e) { return false; }
+    }
+    else {
+      return false;
+    }
+  }
+  catch (e) { return false; }
+}
+
+
+
+
+
+
+
+/*
+
+  Other Tables
+
+*/
+
+
+
+
+
+async function getAll() {
+  return await User.find().select('-hash');
+}
+
+async function getById(id) {
+  return await User.findById(id).select('-hash');
 }

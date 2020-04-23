@@ -29,10 +29,19 @@ Register
 İncrease Balance  /Api/UserProfile/increaseBalance
 Post
 { "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbW91bnQiOjUwLCJ1c2VybmFtZSI6ImxlZG1hZ28yIn0.vSi0eNfxCWtEWVHwgtDfc_HL4cN8nLG0mV288KUY4po"  }
-        debugged = {
-            "amount":50,
-            "username":"ledmago2"
+        jwt sign edilmiş Hali = {
+           {
+         username: 'ledmago2',
+        amount:50,
+        operation:'decrease',
+        iat:Math.round(Date.now()/1000),
+        exp:Math.round(Date.now()/1000+7)
+    }
         }
+}
+Decrease Balance /Api/UserProfile/decreaseBalance
+{
+        "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbW91bnQiOjUwLCJ1c2VybmFtZSI6ImxlZG1hZ28yIn0.vSi0eNfxCWtEWVHwgtDfc_HL4cN8nLG0mV288KUY4po" 
 }
 
 
@@ -45,4 +54,21 @@ Change Password /Api/UserProfile/changePassword
 Change Email /Api/UserProfile/ChangeEmail
 {
 	"email":"firatasd@asds.com"
+}
+
+Add credit card or or Update  Update only for users /Api/UserProfile/addCard
+{
+
+cardNumber:"455646465,
+expireDate:05/12,
+cc:657,
+placeHolder:"Fırat Dogan"
+}
+
+Add Iban only for driverLicense /Api/UserProfile/addIban
+{
+
+   "iban":5545045450000,
+   "bank":"05/19",
+   "placeHolder":"dddd"
 }
