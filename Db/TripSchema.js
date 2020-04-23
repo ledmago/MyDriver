@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const paymentsSchema = new Schema({
+const tripSchema = new Schema({
   startedTime:{type:Date, required:true},
   distance: { type: Number, required: true },
   duration: { type: Number, required: true },
@@ -9,9 +9,9 @@ const paymentsSchema = new Schema({
   startCordinate:{type:Object,required:true},
   finishCordinate:{type:Object,required:true},
   passangerNumber:{type:Number,required:true},
-  preferences:{type:Object,required:true},
-  driverUsername:{type:String,required:true},
+  preferences:{type:Object,required:false},
+  driverUsername:{type:String,required:false,default:null},
 });
 
-paymentsSchema.set('toJSON', { virtuals: true });
-module.exports = Driver = mongoose.model('paymentLog', paymentsSchema);
+tripSchema.set('toJSON', { virtuals: true });
+module.exports = Driver = mongoose.model('Trips', tripSchema);

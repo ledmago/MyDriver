@@ -18,7 +18,8 @@ module.exports = {
   updateLocation,
   addCard,
   addIban,
-  addVehicle
+  addVehicle,
+  CheckLogin,
 };
 
 
@@ -37,7 +38,7 @@ var createHash = (username, res, userType) => {
   res.cookie('userHash', userHashToken);
 
 }
-var CheckLogin = async (userHash) => {
+async function CheckLogin (userHash) {
   try {
     if (userHash) {
       var result = jwt.verify(userHash, config.secret);

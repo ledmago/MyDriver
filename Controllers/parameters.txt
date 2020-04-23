@@ -72,3 +72,18 @@ Add Iban only for driverLicense /Api/UserProfile/addIban
    "bank":"05/19",
    "placeHolder":"dddd"
 }
+
+
+
+
+
+startTrip /Api/Trip/startTrip
+{
+"startedTime":1587646215800,
+"distance":50,
+"duration":96,
+"startCordinate":{"latitude":20,"longitude":30},
+"finishCordinate":{"latitude":20,"longitude":30},
+"passangerNumber":2,
+"preferences":"null"
+}

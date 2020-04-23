@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const route = express.Router();
-const { increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard, addIban, addVehicle } = require('../Controllers/userService');
+const { increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard, addIban, addVehicle } = require('../Controllers/UserService');
 
 route.post('/increaseBalance', async (req, res) => {
     await increase_decreaseBalance(req.body.token, req, res);
