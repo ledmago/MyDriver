@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../Db/UserSchema');
 const Driver = require('../Db/DriverSchema');
-const PaymentLog = require('../Db/PaymentLog');
+const PaymentLog = require('../Db/PaymentLogSchema');
 
 module.exports = {
   authenticateUser,
