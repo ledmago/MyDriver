@@ -29,6 +29,7 @@ app.use('/api/Logout', require('./Api/Logout'));
 
 app.use('/api/UserProfile', require('./Api/UserProfile'));
 app.use('/api/Trip', require('./Api/Trip'));
+app.use('/api/PromotionCode', require('./Api/PromotionCode'));
 
 app.use('/api/userModel', require('./Api/User'));
 // global error handler

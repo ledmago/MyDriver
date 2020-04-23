@@ -10,8 +10,30 @@ module.exports = {
  startTrip,
  CheckAlreadyCurrentTripExist,
  changeStatus,
+ assignDriver,
 
 };
+
+async function assignDriver(tripId,req,res) {
+
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+    
+    const trip = await Trip.findById(tripId);
+    if(userType == 'driver' && trip) // Only can access drivers
+    {
+      trip.driverUsername = username;
+      trip.save();
+      res.send({ status: 'ok', message: 'driver atandı', trip:trip})
+    }
+    else{
+      res.send({ status: 'fail',message:'Atamaya izin yok'});
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+}
 
 async function changeStatus(tripId,newStatus,req,res) {
 
@@ -33,7 +55,6 @@ async function changeStatus(tripId,newStatus,req,res) {
   }
   catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
 }
-
 
 async function CheckAlreadyCurrentTripExist(req,res,user = null)
 {

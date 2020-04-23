@@ -87,3 +87,9 @@ startTrip /Api/Trip/startTrip
 "passangerNumber":2,
 "preferences":"null"
 }
+
+changeStatus Api/Trip/changeStatus
+{
+"tripId":"5ea19b75ff178d08e0c737ae",
+"newStatus":2
+}
