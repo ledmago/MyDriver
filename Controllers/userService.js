@@ -180,11 +180,12 @@ function validatePhone(phone) {
 // Validate for registering main functions
 var validateRegisterParams = async (userParams) => {
 
-  var isUsernameAlready = await ValidateUsername(userParams.username, userParams.userType) ? true : 'the username ' + userParams.username + ' is already taken.';
+  var isUsernameAlready = await ValidateUsername(userParams.username, userParams.userType) ? true : 'Kullanıcı adı ' + userParams.username + ' daha önceden alınmış';
   var isUsernameValid = userParams.username.length > 4 && userParams.username.length < 15 ? true : ' Your Username should be at least 5 character and maximum 15 character';
   var isEmailValid = await ValidateEmail(userParams.email) ? true : ' Your email Address is wrong';
-  var isAlreadyEmail = await isThereEmailAlready(userParams.email, userParams.userType) ? true : ' Your email address is registered by another account.';
-  var isPhone = await validatePhone(userParams.phone) ? true : ' Your phone number is not valid.';
+  var isAlreadyEmail = await isThereEmailAlready(userParams.email, userParams.userType) ? true : ' Bu email adresi daha önce bir hesaba kayıtlı';
+  var isPhone = await userParams.phone.length > 2 ? true : ' Your phone number is not valid.'
+  // var isPhone = await validatePhone(userParams.phone) ? true : ' Your phone number is not valid.';
   var isPasswordValid = userParams.password.length > 5 && userParams.password.length < 15 ? true : ' Your password should be at least 6 character and maximum 15 character';
   var isFirstNameValid = userParams.firstName.length > 2 && userParams.firstName.length < 18 ? true : 'Your first name should be at least 3 character and maximum 18 character ';
   var isFLastNameValid = userParams.lastName.length > 2 && userParams.lastName.length < 18 ? true : 'Your last name should be at least 3 character and maximum 18 character ';
@@ -192,7 +193,7 @@ var validateRegisterParams = async (userParams) => {
 
   // For Drivers
   if (userParams.userType == 'driver') {
-    var isvehiclValid = userParams.vehicleTemp.marka.length > 1 && userParams.vehicleTemp.model.length > 1 && userParams.vehicleTemp.plaka.length > 1 ? true : 'Check your vehicle informations';
+    var isvehiclValid = userParams.vehicleTemp.marka.length > 1 && userParams.vehicleTemp.model.length > 1 && userParams.vehicleTemp.plaka.length && userParams.vehicleTemp.yil > 1990 ? true :  'Araç bilgilerinizi kontrol edin'
     var isDriverLicense = userParams.driverLicense == true ? true : 'You should have driver License';
 
   }
@@ -212,7 +213,7 @@ var validateRegisterParams = async (userParams) => {
       if (isFirstNameValid != true) errorArray.push(isFirstNameValid);
       if (isFLastNameValid != true) errorArray.push(isFLastNameValid);
       if (isGendeValid != true) errorArray.push(isGendeValid);
-      return { status: 'false', message: errorArray }
+      return { status: 'fail', message: errorArray }
 
     }
 
@@ -232,7 +233,7 @@ var validateRegisterParams = async (userParams) => {
       if (isGendeValid != true) errorArray.push(isGendeValid);
       if (isvehiclValid != true) errorArray.push(isvehiclValid);
       if (isDriverLicense != true) errorArray.push(isDriverLicense);
-      return { status: 'false', message: errorArray }
+      return { status: 'fail', message: errorArray }
 
     }
   }
