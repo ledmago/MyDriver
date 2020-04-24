@@ -37,6 +37,7 @@ route.get('/jwt', async (req, res) => {
     res.json(jwt2);
 });
 
+
 route.get('/jwtverify/:jwt', async (req, res) => {
     res.send(await jwt.verify(req.params.jwt, 'data'));
 });

@@ -33,6 +33,31 @@ app.use('/api/PromotionCode', require('./Api/PromotionCode'));
 app.use('/api/Message', require('./Api/Message'));
 
 app.use('/api/userModel', require('./Api/User'));
+
+app.post('/Api/LoginByCookie', async (req, res) => {
+   if(req.cookies.userHash)
+   {
+       try{
+           const result = jwt.verify(req.cookies.userHash,config.secret);
+            if(result.userType != null)
+            {
+                res.json(result)
+            }
+            else{
+                res.send({status:'fail'})
+            }
+    }   
+    catch(e)
+    {
+        res.send({status:'fail'})
+    }
+        
+   }
+   else{
+       res.send({status:'fail'})
+   }
+ });
+
 // global error handler
 app.use(errorHandler);
 const Port = process.env.Port || 1337;
