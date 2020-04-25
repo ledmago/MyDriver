@@ -376,6 +376,8 @@ async function registerDriver(userParam, req, res) {
 */
 async function getProfilePicture(username2, userType, req, res) {
   try {
+    if(username2 == 'default' && userType == 'default') {res.sendFile(config.ProfilePictureUrl + 'default.png',{ root: './' });}
+
     const getProfileUrl = userType == 'user' ? await User.findOne({ username: username2 }) : await Driver.findOne({ username: username2 });
     var profilePicture = getProfileUrl.profilePicture;
     if (profilePicture != null && profilePicture != '') {
@@ -387,7 +389,8 @@ async function getProfilePicture(username2, userType, req, res) {
     }
   }
   catch (e) {
-    res.send({ status: 'fail', message: 'User bulunamadı',e:e.message });
+    res.sendFile(config.ProfilePictureUrl + 'default.png',{ root: './' })
+    // res.send({ status: 'fail', message: 'User bulunamadı',e:e.message });
   }
 
   /*
