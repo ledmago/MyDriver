@@ -1,5 +1,5 @@
 {
     "DBuri": "mongodb+srv://ledmago:Ledmago11@ledmago-jyscr.azure.mongodb.net/General?retryWrites=true&w=majority",
-    "ProfilePictureUrl":"./images/",
+    "ProfilePictureUrl":"images/",
     "secret": "secretKey00009"
 }

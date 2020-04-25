@@ -377,16 +377,17 @@ async function registerDriver(userParam, req, res) {
 async function getProfilePicture(username2, userType, req, res) {
   try {
     const getProfileUrl = userType == 'user' ? await User.findOne({ username: username2 }) : await Driver.findOne({ username: username2 });
-    profilePicture = getProfileUrl.profilePicture
-    if (profilePicture != null) {
-      res.sendfile(config.ProfilePictureUrl + profilePicture)
+    var profilePicture = getProfileUrl.profilePicture;
+    if (profilePicture != null && profilePicture != '') {
+      res.sendFile(config.ProfilePictureUrl + profilePicture,{ root: './' })
+      // res.sendFile(config.ProfilePictureUrl + profilePicture)
     }
     else {
-      res.send(config.ProfilePictureUrl + 'default.png');
+      res.sendFile(config.ProfilePictureUrl + 'default.png',{ root: './' })
     }
   }
   catch (e) {
-    res.send({ status: 'fail', message: 'User bulunamadı' });
+    res.send({ status: 'fail', message: 'User bulunamadı',e:e.message });
   }
 
   /*
