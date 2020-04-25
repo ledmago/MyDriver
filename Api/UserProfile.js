@@ -1,8 +1,13 @@
 const express = require('express');
+const config = require('../config.json');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const route = express.Router();
-const { increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard, addIban, addVehicle } = require('../Controllers/UserService');
+const fileUpload = require('express-fileupload');
+route.use(fileUpload()); // Resim Yüklemek İçin
+var image = require('express-image');
+const { increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard, addIban, addVehicle,uploadProfilePhoto,getProfilePicture } = require('../Controllers/UserService');
+
 
 route.post('/increaseBalance', async (req, res) => {
     await increase_decreaseBalance(req.body.token, req, res);
@@ -28,6 +33,20 @@ route.post('/addIban', async (req, res) => {
 route.post('/addVehicle', async (req, res) => {
     await addVehicle(req.body.plaka, req.body.marka, req.body.model, req.body.yil, req.body.renk, req, res);
 });
+route.post('/uploadProfilePhoto',async (req, res) => {
+    
+    await uploadProfilePhoto(req,res);
+
+  
+});
+
+route.get('/getProfilePicture/:username/:userType',async (req, res) => {
+    await getProfilePicture(req.params.username,req.params.userType,req,res);
+});
+
+
+
+
 route.get('/jwt', async (req, res) => {
     const jwt2 = await jwt.sign({
         username: 'ledmago2',
@@ -41,4 +60,27 @@ route.get('/jwt', async (req, res) => {
 route.get('/jwtverify/:jwt', async (req, res) => {
     res.send(await jwt.verify(req.params.jwt, 'data'));
 });
+
+
+
+// const Storage = multer.diskStorage({
+//     destination(req, file, callback) {
+//       callback(null, './images')
+//     },
+//     filename(req, file, callback) {
+//       callback(null, `${file.fieldname}_${Date.now()}_${file.originalname}`)
+//     },
+//   })
+//   const upload = multer({ storage: Storage})
+
+
+//   route.post('/uploadProfilePhoto',upload.single('photo'), (req, res) => {
+    
+//     console.log('file', req.files)
+//     console.log('body', req.body)
+//     res.status(200).json({
+//       message: 'success!',
+//       file:req.file,
+//     })
+//   })
 module.exports = route;

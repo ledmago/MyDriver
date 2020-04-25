@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../Db/UserSchema');
 const Driver = require('../Db/DriverSchema');
 const PaymentLog = require('../Db/PaymentLogSchema');
+var image = require('express-image');
 
 module.exports = {
   authenticateUser,
@@ -20,6 +21,8 @@ module.exports = {
   addIban,
   addVehicle,
   CheckLogin,
+  uploadProfilePhoto,
+  getProfilePicture,
 };
 
 
@@ -38,7 +41,7 @@ var createHash = (username, res, userType) => {
   res.cookie('userHash', userHashToken);
 
 }
-async function CheckLogin (userHash) {
+async function CheckLogin(userHash) {
   try {
     if (userHash) {
       var result = jwt.verify(userHash, config.secret);
@@ -193,7 +196,7 @@ var validateRegisterParams = async (userParams) => {
 
   // For Drivers
   if (userParams.userType == 'driver') {
-    var isvehiclValid = userParams.vehicleTemp.marka.length > 1 && userParams.vehicleTemp.model.length > 1 && userParams.vehicleTemp.plaka.length && userParams.vehicleTemp.yil > 1990 ? true :  'Araç bilgilerinizi kontrol edin'
+    var isvehiclValid = userParams.vehicleTemp.marka.length > 1 && userParams.vehicleTemp.model.length > 1 && userParams.vehicleTemp.plaka.length && userParams.vehicleTemp.yil > 1990 ? true : 'Araç bilgilerinizi kontrol edin'
     var isDriverLicense = userParams.driverLicense == true ? true : 'You should have driver License';
 
   }
@@ -365,14 +368,76 @@ async function registerDriver(userParam, req, res) {
 
 
 
-
-
 /*
 
   User Functions
 
 
 */
+async function getProfilePicture(username2, userType, req, res) {
+  try {
+    const getProfileUrl = userType == 'user' ? await User.findOne({ username: username2 }) : await Driver.findOne({ username: username2 });
+    profilePicture = getProfileUrl.profilePicture
+    if (profilePicture != null) {
+      res.sendfile(config.ProfilePictureUrl + profilePicture)
+    }
+    else {
+      res.send(config.ProfilePictureUrl + 'default.png');
+    }
+  }
+  catch (e) {
+    res.send({ status: 'fail', message: 'User bulunamadı' });
+  }
+
+  /*
+      const getProfileUrl = userType == 'user' ? await User.findOne({username:username2}) :  await Driver.findOne({username:username2});
+      if(getProfileUrl.profilePicture !=null)
+      {
+          image(config.ProfilePictureUrl + getProfileUrl.profilePicture);
+      }
+      else{
+        image(config.ProfilePictureUrl + 'default.jpg');
+      }
+    
+    */
+}
+async function uploadProfilePhoto(req, res) {
+
+  var generalUser = await CheckLogin(req.cookies.userHash);
+  var username = generalUser.username;
+  var userType = generalUser.userType;
+  if (username) {
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).send('No files were uploaded.');
+    }
+
+    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+    let sampleFile = req.files.photo;
+    var extention;
+    if (sampleFile.mimetype == 'image/jpeg') { extention = '.jpg'; }
+    else if (sampleFile.mimetype == 'image/jpeg') { extention = '.png'; }
+    else if (sampleFile.mimetype == 'image/gif') { extention = '.gif'; }
+    else { return res.send({ status: 'fail', message: 'Hatalı Resim' }); }
+
+    // Use the mv() method to place the file somewhere on your server
+    sampleFile.mv('./images/' + username + extention, async function (err) {
+      if (err) { return res.status(500).send(err); }
+
+      const updateUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+      updateUser.profilePicture = username + extention;
+      updateUser.save();
+      res.send({ status: 'ok', message: 'Fotoğraf Yüklendi' });
+    });
+  }
+  else {
+    res.send({ status: 'fail', message: 'Giriş Yapılmamış' });
+  }
+
+
+
+
+
+}
 
 async function increase_decreaseBalance(token, req, res) {
 
@@ -380,7 +445,7 @@ async function increase_decreaseBalance(token, req, res) {
   var generalUser = await CheckLogin(req.cookies.userHash);
   var username = generalUser.username;
   var userType = generalUser.userType;
-  const tokenAlreadyExist = await PaymentLog.exists({token:token})
+  const tokenAlreadyExist = await PaymentLog.exists({ token: token })
   if (username && token != null && tokenAlreadyExist == false) {
     try {
       var tokenResult = jwt.verify(token, config.secret);
@@ -390,10 +455,10 @@ async function increase_decreaseBalance(token, req, res) {
 
       if (tokenUsername == username) {
         const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
-        var newBalance = opearation == 'increase' ? currentUser.balance + amount:currentUser.balance - amount
+        var newBalance = opearation == 'increase' ? currentUser.balance + amount : currentUser.balance - amount
         currentUser.balance = newBalance;
         currentUser.save();
-        addPaymentLog(req,opearation, amount,null,token,newBalance);
+        addPaymentLog(req, opearation, amount, null, token, newBalance);
         res.status(202).json({ status: 'ok', balance: currentUser.balance });
 
       }
@@ -653,19 +718,19 @@ async function addVehicle(plaka, marka, model, yil, renk, req, res) {
   }
   catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
 }
-async function addPaymentLog(req,operation, amount, reason = null,token,finishedBalance) {
+async function addPaymentLog(req, operation, amount, reason = null, token, finishedBalance) {
 
   try {
     var generalUser = await CheckLogin(req.cookies.userHash);
     var username = generalUser.username;
     var userType = generalUser.userType;
-   
+
     if (username && operation != null && amount != null) {
       try {
 
         const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
 
-        var paymentLog = new PaymentLog({ username: currentUser.username, operation: operation, amount: amount, reason: reason,token:token,finishedBalance:finishedBalance });
+        var paymentLog = new PaymentLog({ username: currentUser.username, operation: operation, amount: amount, reason: reason, token: token, finishedBalance: finishedBalance });
         paymentLog.save();
         return true;
 
