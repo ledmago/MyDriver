@@ -6,7 +6,7 @@ const route = express.Router();
 const fileUpload = require('express-fileupload');
 route.use(fileUpload()); // Resim Yüklemek İçin
 var image = require('express-image');
-const { increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard, addIban, addVehicle,uploadProfilePhoto,getProfilePicture } = require('../Controllers/UserService');
+const { increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard,deleteCard, addIban,deleteIban, addVehicle,uploadProfilePhoto,getProfilePicture,getCreditCards,deleteVehicle } = require('../Controllers/UserService');
 
 
 route.post('/increaseBalance', async (req, res) => {
@@ -25,19 +25,31 @@ route.post('/updateLocation', async (req, res) => {
     await updateLocation(req.body.latitude, req.body.longitude, req, res);
 });
 route.post('/addCard', async (req, res) => {
-    await addCard(req.body.cardNumber, req.body.expireDate, req.body.cc, req.body.placeHolder, req, res);
+    await addCard(req.body.cardNumber, req.body.expireDate, req.body.cc, req.body.placeHolder,req.body.type, req, res);
+});
+route.post('/deleteCard', async (req, res) => {
+    await deleteCard(req.body.cardNumber, req, res);
 });
 route.post('/addIban', async (req, res) => {
     await addIban(req.body.iban, req.body.placeHolder, req.body.bank, req, res);
 });
+route.post('/deleteIban', async (req, res) => {
+    await deleteIban(req.body.iban,req, res);
+});
 route.post('/addVehicle', async (req, res) => {
     await addVehicle(req.body.plaka, req.body.marka, req.body.model, req.body.yil, req.body.renk, req, res);
+});
+route.post('/deleteVehicle', async (req, res) => {
+    await deleteVehicle(req.body.plaka, req, res);
 });
 route.post('/uploadProfilePhoto',async (req, res) => {
     
     await uploadProfilePhoto(req,res);
 
   
+});
+route.post('/getCreditCards',async (req, res) => {
+    await getCreditCards(req,res);
 });
 
 route.get('/getProfilePicture/:username/:userType',async (req, res) => {
