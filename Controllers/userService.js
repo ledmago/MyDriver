@@ -27,6 +27,8 @@ module.exports = {
   CheckLogin,
   uploadProfilePhoto,
   getProfilePicture,
+  addPaymentLog,
+  getPaymentLog,
 };
 
 
@@ -380,20 +382,20 @@ async function registerDriver(userParam, req, res) {
 */
 async function getProfilePicture(username2, userType, req, res) {
   try {
-    if(username2 == 'default' && userType == 'default') {res.sendFile(config.ProfilePictureUrl + 'default.png',{ root: './' });}
+    if (username2 == 'default' && userType == 'default') { res.sendFile(config.ProfilePictureUrl + 'default.png', { root: './' }); }
 
     const getProfileUrl = userType == 'user' ? await User.findOne({ username: username2 }) : await Driver.findOne({ username: username2 });
     var profilePicture = getProfileUrl.profilePicture;
     if (profilePicture != null && profilePicture != '') {
-      res.sendFile(config.ProfilePictureUrl + profilePicture,{ root: './' })
+      res.sendFile(config.ProfilePictureUrl + profilePicture, { root: './' })
       // res.sendFile(config.ProfilePictureUrl + profilePicture)
     }
     else {
-      res.sendFile(config.ProfilePictureUrl + 'default.png',{ root: './' })
+      res.sendFile(config.ProfilePictureUrl + 'default.png', { root: './' })
     }
   }
   catch (e) {
-    res.sendFile(config.ProfilePictureUrl + 'default.png',{ root: './' })
+    res.sendFile(config.ProfilePictureUrl + 'default.png', { root: './' })
     // res.send({ status: 'fail', message: 'User bulunamadı',e:e.message });
   }
 
@@ -484,458 +486,485 @@ async function increase_decreaseBalance(token, req, res) {
 
 }
 
-async function changePassword(newPassword, oldPassword, req, res) {
+async function getPaymentLog(req, res) {
 
   try {
     var generalUser = await CheckLogin(req.cookies.userHash);
     var username = generalUser.username;
     var userType = generalUser.userType;
     var oldCurrentPassword = generalUser.hash;
-    if (username && bcrypt.compareSync(oldPassword, oldCurrentPassword)) {
+    if (username) {
+
       try {
 
-        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
-        currentUser.hash = bcrypt.hashSync(newPassword, 10);
-        currentUser.save();
-        res.status(202).json({ status: 'ok', message: 'Şifre değiştirildi' });
+       
+        const getPaymentLogsByUsername = await PaymentLog.find({username:username})
+        res.status(202).json({ status: 'ok', paymentLog:getPaymentLogsByUsername});
 
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-    }
-    else {
-      res.send({ status: 'fail', message: 'Eski şifre yanlış' })
-    }
+      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
+
+
+  } 
+}
+  catch (e) {
+    res.send({ status: 'fail' });
   }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
 }
 
-async function changeEmail(newEmail, req, res) {
 
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && ValidateEmail(newEmail) && await isThereEmailAlready(newEmail)) {
-      try {
+async function changePassword(newPassword, oldPassword, req, res) {
 
-        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
-        currentUser.email = newEmail;
-        currentUser.save();
-        res.status(202).json({ status: 'ok', message: 'Email değiştirildi' });
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      var oldCurrentPassword = generalUser.hash;
+      if (username && bcrypt.compareSync(oldPassword, oldCurrentPassword)) {
+        try {
 
-      }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-    }
-    else {
-      res.send({ status: 'fail', message: 'Email Geçersiz veya bir hesap tarafından zaten kullanılıyor.' })
-    }
-  }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-}
-async function deleteIban(iban,req, res) {
- 
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && iban != null  && userType == 'driver') {
-      try {
-
-        const currentUser = await Driver.findOne({ username: username });
-        var currentIban= currentUser.vehicle;
-        var ibanList = [];
-        var alreadyExist = false;
-        var itemIndex = null;
-        if (currentIban) {
-          currentIban.map((item) => { ibanList.push(item) })
-        }
-        else {
-          currentUser.iban = [];
-        }
-
-        // checks it if already credit card
-        currentUser.iban.map((item, index) => { if (item.iban == iban) { alreadyExist = true; itemIndex = index; } });
-
-        if (alreadyExist == false) {
-          
-          res.status(202).json({ status: 'fail', message: 'Araç bulunamadı',e:plaka });
-        }
-        else {
-
-          
-          ibanList.splice(itemIndex,1);
-
-
-          currentUser.iban = 'something'; // bu gerekli
-          currentUser.iban = ibanList;
+          const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+          currentUser.hash = bcrypt.hashSync(newPassword, 10);
           currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Iban Güncellendi', return: currentUser.iban });
+          res.status(202).json({ status: 'ok', message: 'Şifre değiştirildi' });
+
         }
-
-
-
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+      else {
+        res.send({ status: 'fail', message: 'Eski şifre yanlış' })
+      }
     }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
-    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
   }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
 
-}
-async function deleteVehicle(plaka,req, res) {
- 
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && plaka != null  && userType == 'driver') {
-      try {
+  async function changeEmail(newEmail, req, res) {
 
-        const currentUser = await Driver.findOne({ username: username });
-        var currentVehicle= currentUser.vehicle;
-        var vehicleList = [];
-        var alreadyExist = false;
-        var itemIndex = null;
-        if (currentVehicle) {
-          currentVehicle.map((item) => { vehicleList.push(item) })
-        }
-        else {
-          currentUser.vehicle = [];
-        }
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && ValidateEmail(newEmail) && await isThereEmailAlready(newEmail)) {
+        try {
 
-        // checks it if already credit card
-        currentUser.vehicle.map((item, index) => { if (item.plaka == plaka) { alreadyExist = true; itemIndex = index; } });
-
-        if (alreadyExist == false) {
-          
-          res.status(202).json({ status: 'fail', message: 'Araç bulunamadı',e:plaka });
-        }
-        else {
-
-          
-          vehicleList.splice(itemIndex,1);
-
-
-          currentUser.vehicle = 'something'; // bu gerekli
-          currentUser.vehicle = vehicleList;
+          const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+          currentUser.email = newEmail;
           currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Araç Güncellendi', return: currentUser.vehicle });
+          res.status(202).json({ status: 'ok', message: 'Email değiştirildi' });
+
         }
-
-
-
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-    }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
-    }
-  }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
-
-}
-async function updateLocation(latitude, longitude, req, res) {
-
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && latitude != null && longitude != null) {
-      try {
-
-        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
-        currentUser.currentPosition = { latitude: latitude, longitude: longitude };
-        currentUser.save();
-        res.status(202).json({ status: 'ok', message: 'Konum Güncellendi' });
-
+      else {
+        res.send({ status: 'fail', message: 'Email Geçersiz veya bir hesap tarafından zaten kullanılıyor.' })
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
     }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
-    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
   }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-}
-async function deleteCard(cardNumber,req, res) {
- 
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && cardNumber != null  && userType == 'user') {
-      try {
+  async function deleteIban(iban, req, res) {
 
-        const currentUser = await User.findOne({ username: username });
-        var currentCard = currentUser.creditCards;
-        var creditCardList = [];
-        var alreadyExist = false;
-        var itemIndex = null;
-        if (currentCard) {
-          currentCard.map((item) => { creditCardList.push(item) })
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && iban != null && userType == 'driver') {
+        try {
+
+          const currentUser = await Driver.findOne({ username: username });
+          var currentIban = currentUser.vehicle;
+          var ibanList = [];
+          var alreadyExist = false;
+          var itemIndex = null;
+          if (currentIban) {
+            currentIban.map((item) => { ibanList.push(item) })
+          }
+          else {
+            currentUser.iban = [];
+          }
+
+          // checks it if already credit card
+          currentUser.iban.map((item, index) => { if (item.iban == iban) { alreadyExist = true; itemIndex = index; } });
+
+          if (alreadyExist == false) {
+
+            res.status(202).json({ status: 'fail', message: 'Araç bulunamadı', e: plaka });
+          }
+          else {
+
+
+            ibanList.splice(itemIndex, 1);
+
+
+            currentUser.iban = 'something'; // bu gerekli
+            currentUser.iban = ibanList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'Iban Güncellendi', return: currentUser.iban });
+          }
+
+
+
         }
-        else {
-          currentUser.creditCards = [];
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+      }
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
+      }
+    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
+
+  }
+  async function deleteVehicle(plaka, req, res) {
+
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && plaka != null && userType == 'driver') {
+        try {
+
+          const currentUser = await Driver.findOne({ username: username });
+          var currentVehicle = currentUser.vehicle;
+          var vehicleList = [];
+          var alreadyExist = false;
+          var itemIndex = null;
+          if (currentVehicle) {
+            currentVehicle.map((item) => { vehicleList.push(item) })
+          }
+          else {
+            currentUser.vehicle = [];
+          }
+
+          // checks it if already credit card
+          currentUser.vehicle.map((item, index) => { if (item.plaka == plaka) { alreadyExist = true; itemIndex = index; } });
+
+          if (alreadyExist == false) {
+
+            res.status(202).json({ status: 'fail', message: 'Araç bulunamadı', e: plaka });
+          }
+          else {
+
+
+            vehicleList.splice(itemIndex, 1);
+
+
+            currentUser.vehicle = 'something'; // bu gerekli
+            currentUser.vehicle = vehicleList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'Araç Güncellendi', return: currentUser.vehicle });
+          }
+
+
+
         }
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+      }
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
+      }
+    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
 
-        // checks it if already credit card
-        currentUser.creditCards.map((item, index) => { if (item.cardNumber == cardNumber) { alreadyExist = true; itemIndex = index; } });
+  }
+  async function updateLocation(latitude, longitude, req, res) {
 
-        if (alreadyExist == false) {
-          
-          res.status(202).json({ status: 'fail', message: 'Kredi Kartı bulunamadı',e:cardNumber });
-        }
-        else {
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && latitude != null && longitude != null) {
+        try {
 
-          
-          creditCardList.splice(itemIndex,1);
-
-
-          currentUser.creditCards = 'something'; // bu gerekli
-          currentUser.creditCards = creditCardList;
+          const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+          currentUser.currentPosition = { latitude: latitude, longitude: longitude };
           currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi', return: currentUser.creditCards });
+          res.status(202).json({ status: 'ok', message: 'Konum Güncellendi' });
+
         }
-
-
-
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-    }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
-    }
-  }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
-
-}
-async function addCard(cardNumber, expireDate, cc, placeHolder,type, req, res) {
-
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && cardNumber != null && expireDate != null && type != null && cc != null && placeHolder != null && userType == 'user') {
-      try {
-
-        const currentUser = await User.findOne({ username: username });
-        var currentCard = currentUser.creditCards;
-        var creditCardList = [];
-        var alreadyExist = false;
-        var itemIndex = null;
-        if (currentCard) {
-          currentCard.map((item) => { creditCardList.push(item) })
-        }
-        else {
-          currentUser.creditCards = [];
-        }
-
-        // checks it if already credit card
-        currentUser.creditCards.map((item, index) => { if (item.cardNumber == cardNumber) { alreadyExist = true; itemIndex = index; } });
-
-        if (alreadyExist == false) {
-          creditCardList.push({ cardNumber: cardNumber, expireDate: expireDate, cc: cc, placeHolder: placeHolder,type:type });
-          currentUser.creditCards = creditCardList;
-          currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi', return: currentUser.creditCards });
-        }
-        else {
-
-
-          creditCardList[itemIndex].cardNumber = cardNumber;
-          creditCardList[itemIndex].expireDate = expireDate;
-          creditCardList[itemIndex].cc = cc;
-          creditCardList[itemIndex].placeHolder = placeHolder;
-          creditCardList[itemIndex].type = type;
-
-
-          currentUser.creditCards = 'something'; // bu gerekli
-          currentUser.creditCards = creditCardList;
-          currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi', return: currentUser.creditCards });
-        }
-
-
-
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
     }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
-    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
   }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-}
+  async function deleteCard(cardNumber, req, res) {
 
-async function addIban(iban, placeHolder, bank, req, res) {
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && cardNumber != null && userType == 'user') {
+        try {
 
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && iban != null && bank != null && placeHolder != null && userType == 'driver') {
-      try {
+          const currentUser = await User.findOne({ username: username });
+          var currentCard = currentUser.creditCards;
+          var creditCardList = [];
+          var alreadyExist = false;
+          var itemIndex = null;
+          if (currentCard) {
+            currentCard.map((item) => { creditCardList.push(item) })
+          }
+          else {
+            currentUser.creditCards = [];
+          }
 
-        const currentUser = await Driver.findOne({ username: username });
-        var currentIban = currentUser.iban;
-        var ibanList = [];
-        var alreadyExist = false;
-        var itemIndex = null;
-        if (currentIban) {
+          // checks it if already credit card
+          currentUser.creditCards.map((item, index) => { if (item.cardNumber == cardNumber) { alreadyExist = true; itemIndex = index; } });
 
-          currentIban.map((item) => { ibanList.push(item) })
+          if (alreadyExist == false) {
+
+            res.status(202).json({ status: 'fail', message: 'Kredi Kartı bulunamadı', e: cardNumber });
+          }
+          else {
+
+
+            creditCardList.splice(itemIndex, 1);
+
+
+            currentUser.creditCards = 'something'; // bu gerekli
+            currentUser.creditCards = creditCardList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi', return: currentUser.creditCards });
+          }
+
+
+
         }
-        else {
-
-          currentUser.iban = [];
-        }
-
-        // checks it if already credit card
-        currentUser.iban.map((item, index) => { if (item.iban == iban) { alreadyExist = true; itemIndex = index; } });
-
-        if (alreadyExist == false) {
-          ibanList.push({ iban: iban, bank: bank, placeHolder: placeHolder });
-          currentUser.iban = ibanList;
-          currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi', return: currentUser.iban });
-        }
-        else {
-
-
-          ibanList[itemIndex].iban = iban;
-          ibanList[itemIndex].bank = bank;
-          ibanList[itemIndex].placeHolder = placeHolder;
-
-          currentUser.iban = 'something'; // bu gerekli
-          currentUser.iban = ibanList;
-          currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'iban Güncellendi', return: currentUser.iban });
-        }
-
-
-
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-    }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya bilgiler eksik' })
-    }
-  }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-}
-async function addVehicle(plaka, marka, model, yil, renk, req, res) {
-
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && marka != null && model != null && yil != null && renk != null && userType == 'driver') {
-      try {
-
-        const currentUser = await Driver.findOne({ username: username });
-        var currentVehicle = currentUser.vehicle;
-        var vehiclList = [];
-        var alreadyExist = false;
-        var itemIndex = null;
-        if (currentVehicle) {
-
-          currentVehicle.map((item) => { vehiclList.push(item) })
-        }
-        else {
-
-          currentUser.vehicle = [];
-        }
-
-        // checks it if already credit card
-        currentUser.vehicle.map((item, index) => { if (item.plaka == plaka) { alreadyExist = true; itemIndex = index; } });
-
-        if (alreadyExist == false) {
-          vehiclList.push({ plaka: plaka, renk: renk, model: model, marka: marka, yil: yil });
-          currentUser.vehicle = vehiclList;
-          currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'Araç Eklendi', return: currentUser.vehicle });
-        }
-        else {
-
-
-          vehiclList[itemIndex].plaka = plaka;
-          vehiclList[itemIndex].marka = marka;
-          vehiclList[itemIndex].model = model;
-          vehiclList[itemIndex].yil = yil;
-          vehiclList[itemIndex].renk = renk;
-
-          currentUser.vehicle = 'something'; // bu gerekli
-          currentUser.vehicle = vehiclList;
-          currentUser.save();
-          res.status(202).json({ status: 'ok', message: 'iban Güncellendi', return: currentUser.vehicle });
-        }
-
-
-
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
     }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya birşeyler yanlış gitti' })
-    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
+
   }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-}
-async function getCreditCards(req, res) {
+  async function addCard(cardNumber, expireDate, cc, placeHolder, type, req, res) {
 
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-    if (username && userType == 'user') {
-      try {
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && cardNumber != null && expireDate != null && type != null && cc != null && placeHolder != null && userType == 'user') {
+        try {
 
-        const currentUser = await User.findOne({ username: username });
-        var creditCards = currentUser.creditCards;
-      
-          res.status(202).json({ status: 'ok', creditCards: creditCards,creditCardsNumber:creditCards.length });
-        
+          const currentUser = await User.findOne({ username: username });
+          var currentCard = currentUser.creditCards;
+          var creditCardList = [];
+          var alreadyExist = false;
+          var itemIndex = null;
+          if (currentCard) {
+            currentCard.map((item) => { creditCardList.push(item) })
+          }
+          else {
+            currentUser.creditCards = [];
+          }
+
+          // checks it if already credit card
+          currentUser.creditCards.map((item, index) => { if (item.cardNumber == cardNumber) { alreadyExist = true; itemIndex = index; } });
+
+          if (alreadyExist == false) {
+            creditCardList.push({ cardNumber: cardNumber, expireDate: expireDate, cc: cc, placeHolder: placeHolder, type: type });
+            currentUser.creditCards = creditCardList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi', return: currentUser.creditCards });
+          }
+          else {
+
+
+            creditCardList[itemIndex].cardNumber = cardNumber;
+            creditCardList[itemIndex].expireDate = expireDate;
+            creditCardList[itemIndex].cc = cc;
+            creditCardList[itemIndex].placeHolder = placeHolder;
+            creditCardList[itemIndex].type = type;
+
+
+            currentUser.creditCards = 'something'; // bu gerekli
+            currentUser.creditCards = creditCardList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'Kredi Kartı Güncellendi', return: currentUser.creditCards });
+          }
 
 
 
+        }
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
       }
-      catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-    }
-    else {
-      res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya birşeyler yanlış gitti' })
-    }
-  }
-  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
-}
-async function addPaymentLog(req, operation, amount, reason = null, token, finishedBalance) {
-
-  try {
-    var generalUser = await CheckLogin(req.cookies.userHash);
-    var username = generalUser.username;
-    var userType = generalUser.userType;
-
-    if (username && operation != null && amount != null) {
-      try {
-
-        const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
-
-        var paymentLog = new PaymentLog({ username: currentUser.username, operation: operation, amount: amount, reason: reason, token: token, finishedBalance: finishedBalance });
-        paymentLog.save();
-        return true;
-
-
-
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya latitudeveya longitude bilgileri eksik' })
       }
-      catch (e) { return false; }
     }
-    else {
-      return false;
-    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
   }
-  catch (e) { return false; }
-}
+
+  async function addIban(iban, placeHolder, bank, req, res) {
+
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && iban != null && bank != null && placeHolder != null && userType == 'driver') {
+        try {
+
+          const currentUser = await Driver.findOne({ username: username });
+          var currentIban = currentUser.iban;
+          var ibanList = [];
+          var alreadyExist = false;
+          var itemIndex = null;
+          if (currentIban) {
+
+            currentIban.map((item) => { ibanList.push(item) })
+          }
+          else {
+
+            currentUser.iban = [];
+          }
+
+          // checks it if already credit card
+          currentUser.iban.map((item, index) => { if (item.iban == iban) { alreadyExist = true; itemIndex = index; } });
+
+          if (alreadyExist == false) {
+            ibanList.push({ iban: iban, bank: bank, placeHolder: placeHolder });
+            currentUser.iban = ibanList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'Kredi Kartı Eklendi', return: currentUser.iban });
+          }
+          else {
+
+
+            ibanList[itemIndex].iban = iban;
+            ibanList[itemIndex].bank = bank;
+            ibanList[itemIndex].placeHolder = placeHolder;
+
+            currentUser.iban = 'something'; // bu gerekli
+            currentUser.iban = ibanList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'iban Güncellendi', return: currentUser.iban });
+          }
+
+
+
+        }
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+      }
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya bilgiler eksik' })
+      }
+    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+  }
+  async function addVehicle(plaka, marka, model, yil, renk, req, res) {
+
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && marka != null && model != null && yil != null && renk != null && userType == 'driver') {
+        try {
+
+          const currentUser = await Driver.findOne({ username: username });
+          var currentVehicle = currentUser.vehicle;
+          var vehiclList = [];
+          var alreadyExist = false;
+          var itemIndex = null;
+          if (currentVehicle) {
+
+            currentVehicle.map((item) => { vehiclList.push(item) })
+          }
+          else {
+
+            currentUser.vehicle = [];
+          }
+
+          // checks it if already credit card
+          currentUser.vehicle.map((item, index) => { if (item.plaka == plaka) { alreadyExist = true; itemIndex = index; } });
+
+          if (alreadyExist == false) {
+            vehiclList.push({ plaka: plaka, renk: renk, model: model, marka: marka, yil: yil });
+            currentUser.vehicle = vehiclList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'Araç Eklendi', return: currentUser.vehicle });
+          }
+          else {
+
+
+            vehiclList[itemIndex].plaka = plaka;
+            vehiclList[itemIndex].marka = marka;
+            vehiclList[itemIndex].model = model;
+            vehiclList[itemIndex].yil = yil;
+            vehiclList[itemIndex].renk = renk;
+
+            currentUser.vehicle = 'something'; // bu gerekli
+            currentUser.vehicle = vehiclList;
+            currentUser.save();
+            res.status(202).json({ status: 'ok', message: 'iban Güncellendi', return: currentUser.vehicle });
+          }
+
+
+
+        }
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+      }
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya birşeyler yanlış gitti' })
+      }
+    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+  }
+  async function getCreditCards(req, res) {
+
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+      if (username && userType == 'user') {
+        try {
+
+          const currentUser = await User.findOne({ username: username });
+          var creditCards = currentUser.creditCards;
+
+          res.status(202).json({ status: 'ok', creditCards: creditCards, creditCardsNumber: creditCards.length });
+
+
+
+
+        }
+        catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+      }
+      else {
+        res.send({ status: 'fail', message: 'Kullanıcı giriş yapmamış veya birşeyler yanlış gitti' })
+      }
+    }
+    catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e }) }
+  }
+  async function addPaymentLog(req, operation, amount, reason = null, token, finishedBalance) {
+
+    try {
+      var generalUser = await CheckLogin(req.cookies.userHash);
+      var username = generalUser.username;
+      var userType = generalUser.userType;
+
+      if (username && operation != null && amount != null) {
+        try {
+
+          const currentUser = userType == 'user' ? await User.findOne({ username: username }) : await Driver.findOne({ username: username });
+
+          var paymentLog = new PaymentLog({ username: currentUser.username, operation: operation, amount: amount, reason: reason, token: token, finishedBalance: finishedBalance });
+          paymentLog.save();
+          return true;
+
+
+
+        }
+        catch (e) { return false; }
+      }
+      else {
+        return false;
+      }
+    }
+    catch (e) { return false; }
+  }
 
 
 
@@ -943,20 +972,20 @@ async function addPaymentLog(req, operation, amount, reason = null, token, finis
 
 
 
-/*
-
-  Other Tables
-
-*/
-
-
+  /*
+  
+    Other Tables
+  
+  */
 
 
 
-async function getAll() {
-  return await User.find().select('-hash');
-}
 
-async function getById(id) {
-  return await User.findById(id).select('-hash');
-}
+
+  async function getAll() {
+    return await User.find().select('-hash');
+  }
+
+  async function getById(id) {
+    return await User.findById(id).select('-hash');
+  }

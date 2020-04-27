@@ -5,7 +5,7 @@ const { CheckLogin } = require('./UserService')
 const User = require('../Db/UserSchema');
 const Driver = require('../Db/DriverSchema');
 const PromotionCode = require('../Db/PromotionSchema');
-
+const {addPaymentLog} = require('./UserService')
 module.exports = {
   usePromotionCode
 
@@ -28,10 +28,12 @@ async function usePromotionCode(code, req, res) {
 
       promotionCode.used = true;
       promotionCode.username = username;
-      promotionCode.save()
+      promotionCode.save();
+      
+      await addPaymentLog(req,'increase',promotionCode.amount,'Promosyon Kodu Kullanıldı',String(Date.now()) + '_' + username,updateUser.balance);
 
 
-      res.send({ status: 'ok', message: 'Kod başarıyla kullanıldı', return: { balance: updateUser.balance } });
+      res.send({status: 'ok', message: 'Kod başarıyla kullanıldı', return: { balance: updateUser.balance } });
 
     }
     else {
