@@ -498,7 +498,7 @@ async function getPaymentLog(req, res) {
       try {
 
        
-        const getPaymentLogsByUsername = await PaymentLog.find({username:username})
+        const getPaymentLogsByUsername = await PaymentLog.find({username:username}).sort({date:-1})
         res.status(202).json({ status: 'ok', paymentLog:getPaymentLogsByUsername});
 
       }
