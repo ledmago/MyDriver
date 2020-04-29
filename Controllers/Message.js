@@ -43,21 +43,33 @@ async function getInbox(req, res) {
       var list = [];
 
       getInboxList.map((item) => {
-        if (item.senderUsername != username && list.indexOf(item.senderUsername) == -1) {
-          list.push(item.senderUsername);
+        if (item.senderUsername != username &&  list.find(item2=> item2.username == item.senderUsername) == null) {
+          var senderObj = {};
+          senderObj.username = item.senderUsername;
+          senderObj.userType = item.senderUsertype;
+          list.push(senderObj);
         }
-        else if (item.receiverUsername != username && list.indexOf(item.receiverUsername) == -1) {
-          list.push(item.receiverUsername);
+        else if (item.receiverUsername != username && list.find(item2=> item2.username == item.receiverUsername) == null) {
+          
+          var senderObj = {};
+          senderObj.username = item.receiverUsername;
+          senderObj.userType = item.receiverUsertype;
+          list.push(senderObj);
         }
       })
 
 
-      var resultObject =[];
+      var resultObject = [];
       var returnResult = list.map(async (item) => {
-        var unreadCounter = await Message.count({ receiverUsername: username, senderUsername: item, readed: false });
-        resultObject.push({ username: item, unreadedCount: unreadCounter });
+        getUserNameByType = null;
+      try { getUserNameByType = item.userType == 'driver' ? await Driver.findOne({username:item.username}): await User.findOne({username:item.username});
+        if(getUserNameByType.username == null) {/* Kullanıcı silinmişse yada database de yoksa error Handler olamsı lazım */}
+        var unreadCounter = await Message.count({ receiverUsername: username, senderUsername: item.username, readed: false });
+        var lastMessage = await Message.findOne( {$or:[{$and:[{receiverUsername:username},{senderUsername:item.username}]},{$and:[{receiverUsername:item.username},{senderUsername:username}]}]}).sort({date:-1})
+        resultObject.push({ username: item.username,userType:item.userType,firstName:getUserNameByType.firstName,lastName:getUserNameByType.lastName, unreadedCount: unreadCounter,lastMessage:lastMessage,lastSender:lastMessage.senderUsername == username ? 'self':'stranger' });
+      }catch(e){}
       });
-      Promise.all(returnResult).then(()=>res.send({ status: 'ok', InboxList: resultObject }));
+      Promise.all(returnResult).then(() => res.send({ status: 'ok', InboxList: resultObject }));
     }
     else {
       res.send({ status: 'fail', message: 'Parametreler eksik.' });
@@ -76,7 +88,7 @@ async function getMessagesFromAnotherPerson(senderUsername, req, res) {
 
 
     if (username && senderUsername != null) {
-      const getMessages = await Message.find({ receiverUsername: username, senderUsername: senderUsername })
+      const getMessages = await Message.find({$or:[{$and:[{receiverUsername:username},{senderUsername:senderUsername}]},{$and:[{receiverUsername:senderUsername},{senderUsername:username}]}]}).sort({date:-1})
       res.send({ status: 'ok', return: getMessages, number: getMessages.length })
     }
     else {
@@ -95,7 +107,7 @@ async function sendMessage(receiverUsername, message, receiverUserType, req, res
 
     isReceiverExist = receiverUserType == 'user' ? await User.exists({ username: receiverUsername }) : await Driver.exists({ username: receiverUsername });
     if (username && isReceiverExist == true && username != receiverUsername && receiverUsername != null && message != null && receiverUserType != null) {
-      const newMessage = new Message({ senderUsername: username, receiverUsername: receiverUsername, message: message, date: Date.now() })
+      const newMessage = new Message({ senderUsername: username, senderUsertype: userType, receiverUsername: receiverUsername, receiverUsertype: receiverUserType, message: message, date: Date.now() })
       newMessage.save();
       res.send({ status: 'ok', message: 'Mesaj gönderildi', return: newMessage })
     }
