@@ -25,6 +25,7 @@ async function assignDriver(tripId, req, res) {
     if (userType == 'driver' && trip) // Only can access drivers
     {
       trip.driverUsername = username;
+      trip.status = 1;
       trip.save();
       res.send({ status: 'ok', message: 'driver atandı', trip: trip })
     }
