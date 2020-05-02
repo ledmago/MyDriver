@@ -6,7 +6,7 @@ const route = express.Router();
 const fileUpload = require('express-fileupload');
 route.use(fileUpload()); // Resim Yüklemek İçin
 var image = require('express-image');
-const { getPaymentLog,increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard,deleteCard, addIban,deleteIban, addVehicle,uploadProfilePhoto,getProfilePicture,getCreditCards,deleteVehicle } = require('../Controllers/UserService');
+const { saveLocation,getPaymentLog,increase_decreaseBalance,changePassword, changeEmail, updateLocation, addCard,deleteCard, addIban,deleteIban, addVehicle,uploadProfilePhoto,getProfilePicture,getCreditCards,deleteVehicle } = require('../Controllers/UserService');
 
 
 route.post('/increaseBalance', async (req, res) => {
@@ -57,6 +57,9 @@ route.get('/getProfilePicture/:username/:userType',async (req, res) => {
 });
 route.post('/getPaymentLog',async (req, res) => {
     await getPaymentLog(req,res);
+});
+route.post('/saveLocation',async (req, res) => {
+    await saveLocation(req.body.latitude,req.body.longitude,req,res);
 });
 
 

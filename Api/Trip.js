@@ -4,16 +4,14 @@ const User = require('../Db/UserSchema');
 const route = express.Router();
 const { startTrip, CheckAlreadyCurrentTripExist, changeStatus,assignDriver} = require('../Controllers/TripService');
 
-route.get('/checkCurrentTrip', async (req, res) => {
+route.post('/checkCurrentTrip', async (req, res) => {
   const status = await CheckAlreadyCurrentTripExist(req, res);
-  res.send({ status: status });
-
 });
 
 route.post('/startTrip', async (req, res) => {
 
-  const { startedTime, distance, duration, startCordinate, finishCordinate, passangerNumber, preferences } = req.body;
-  await startTrip(startedTime, distance, duration, startCordinate, finishCordinate, passangerNumber, preferences, req, res);
+  const { startedTime, distance, duration, startCordinate, finishCordinate, passangerNumber, preferences,price,extraDetail,kalkisAddress,varisAddress} = req.body;
+  await startTrip(startedTime, distance, duration, startCordinate, finishCordinate, passangerNumber, preferences,price,extraDetail,kalkisAddress,varisAddress, req, res);
 
 });
 

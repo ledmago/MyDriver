@@ -10,6 +10,7 @@ module.exports = {
   sendMessage,
   getMessagesFromAnotherPerson,
   getInbox,
+  setReadedAllMessage,
 };
 
 async function getInbox(req, res) {
@@ -64,7 +65,7 @@ async function getInbox(req, res) {
         getUserNameByType = null;
       try { getUserNameByType = item.userType == 'driver' ? await Driver.findOne({username:item.username}): await User.findOne({username:item.username});
         if(getUserNameByType.username == null) {/* Kullanıcı silinmişse yada database de yoksa error Handler olamsı lazım */}
-        var unreadCounter = await Message.count({ receiverUsername: username, senderUsername: item.username, readed: false });
+        var unreadCounter = await Message.countDocuments({ receiverUsername: username, senderUsername: item.username, readed: false });
         var lastMessage = await Message.findOne( {$or:[{$and:[{receiverUsername:username},{senderUsername:item.username}]},{$and:[{receiverUsername:item.username},{senderUsername:username}]}]}).sort({date:-1})
         resultObject.push({ username: item.username,userType:item.userType,firstName:getUserNameByType.firstName,lastName:getUserNameByType.lastName, unreadedCount: unreadCounter,lastMessage:lastMessage,lastSender:lastMessage.senderUsername == username ? 'self':'stranger' });
       }catch(e){}
@@ -78,6 +79,24 @@ async function getInbox(req, res) {
   catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
 }
 
+
+async function setReadedAllMessage(senderUsername, req, res) {
+  try {
+    var generalUser = await CheckLogin(req.cookies.userHash);
+    var username = generalUser.username;
+    var userType = generalUser.userType;
+
+
+    if (username && senderUsername != null) {
+      const getMessages = await Message.updateMany({senderUsername:senderUsername,receiverUsername:username,readed:false},{readed:true});
+      res.send({ status: 'ok', return: getMessages, number: getMessages.length })
+    }
+    else {
+      res.send({ status: 'fail', message: 'Parametreler eksik.' });
+    }
+  }
+  catch (e) { res.send({ status: 'fail', message: 'Bir hata oluştu', e: e.message }) }
+}
 
 
 async function getMessagesFromAnotherPerson(senderUsername, req, res) {

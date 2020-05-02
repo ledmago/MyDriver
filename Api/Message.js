@@ -1,12 +1,19 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const route = express.Router();
-const { sendMessage,getMessagesFromAnotherPerson,getInbox} = require('../Controllers/Message');
+const { sendMessage,getMessagesFromAnotherPerson,getInbox,setReadedAllMessage} = require('../Controllers/Message');
 
 route.post('/sendMessage', async (req, res) => {
 
   const { receiverUsername,message,receiverUserType } = req.body;
   await sendMessage(receiverUsername, message, receiverUserType,req, res);
+
+});
+
+route.post('/setReadedAllMessage', async (req, res) => {
+
+  const { senderUsername } = req.body;
+  await setReadedAllMessage(senderUsername,req, res);
 
 });
 

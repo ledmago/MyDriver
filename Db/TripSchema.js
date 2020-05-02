@@ -11,6 +11,10 @@ const tripSchema = new Schema({
   passangerNumber:{type:Number,required:true},
   preferences:{type:Object,required:false},
   driverUsername:{type:String,required:false,default:null},
+  price:{type:Number,required:true},
+  extraDetail:{type:String,required:false,default:null},
+  kalkisAddress:{type:String,required:false,default:null},
+  varisAddress:{type:String,required:false,default:null},
 });
 
 tripSchema.set('toJSON', { virtuals: true });
