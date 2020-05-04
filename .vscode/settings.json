@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/11ba0380-9c2e-4b96-a841-59a06a0ddd28/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/ledmagoDevelopment",
+    "appService.deploySubpath": ""
+}

@@ -10,7 +10,9 @@ var privateKey = 'ledmagoDevelopmentServerPrivateKey';
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 app.use(cookieParser());
-const {CheckLogin} = require('./Controllers/UserService')
+const {CheckLogin} = require('./Controllers/UserService');
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 // var token = jwt.sign({ foo: 'bar' }, config.secret);
 
 connectDB();
@@ -18,7 +20,6 @@ app.use(express.json({ extended: false }));
 app.use(bodyParser.urlencoded({ extended: false }))
 
 
-app.get('/',(req,res)=>{res.send('okey')})
 app.use('/api/LoginUser', require('./Api/LoginUser'));
 app.use('/api/LoginDriver', require('./Api/LoginDriver'));
 app.use('/api/RegisterUser', require('./Api/RegisterUser'));
@@ -94,6 +95,31 @@ app.post('/Api/LoginByCookie', async (req, res) => {
 
 // global error handler
 app.use(errorHandler);
+
+app.get('/sendMessage', function (req, res){
+    io.emit('selamlar',{as:'as'});
+   });
+
+
+
+app.get('/', function (req, res){
+    res.sendFile(__dirname + '/SocketIO//index.html');
+   });
+
+
 const Port = process.env.Port || 1337;
 
-app.listen(Port, () => console.log('Server started'));
+io.on('connection', socket => {
+    console.log('client connected ' + socket.id)
+    socket.on('update', () => {
+        console.log('update request');
+        io.emit('update')
+    
+    });
+
+  
+    // client.on('event', data => { /* … */ });
+    // client.on('disconnect', () => { /* … */ });
+  });
+
+server.listen(Port, () => console.log('Server started'));

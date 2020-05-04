@@ -1,0 +1,21 @@
+<!-- <script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io();
+  socket.on('selamlar',()=>{
+      console.log('aleyküm selam')
+  })
+</script> -->
+
+<button>Update</button>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+ var socket = io();
+
+ socket.on('update',function(){
+   alert('update')
+ })
+ var button = document.querySelector('button');
+ button.onclick = function(){
+  socket.emit('update');
+ }
+</script>
